@@ -70,7 +70,7 @@ export default function Navbar() {
       </div>
 
       {/* Categories Ribbon (Amazon Style) */}
-      <div className="header-ribbon hidden-mobile">
+      <div className="header-ribbon">
         <div className="container ribbon-inner">
           <a href="#" className="ribbon-link ribbon-all">
             <Menu size={18} /> All
