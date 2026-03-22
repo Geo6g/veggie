@@ -13,25 +13,6 @@ export default function CartDrawer() {
   const isFreeDelivery = cartTotal >= 300;
   const deliveryDiff = 300 - cartTotal;
 
-  const generateWhatsAppLink = () => {
-    const phoneNumber = "918078803752"; 
-    let message = "Hi FreshVeg! I would like to place an order:\n\n";
-    
-    items.forEach(item => {
-      message += `${item.quantity}x ${item.name} (${item.packSize}) - ₹${Math.round(item.price * item.quantity)}\n`;
-    });
-    
-    const deliveryFee = isFreeDelivery ? 0 : 40;
-    const finalTotal = cartTotal + deliveryFee;
-    
-    message += `\nSubtotal: ₹${Math.round(cartTotal)}\n`;
-    message += `Delivery: ${isFreeDelivery ? '*Free*' : `₹${deliveryFee}`}\n`;
-    message += `*Total: ₹${Math.round(finalTotal)}*\n\n`;
-    message += "Please let me know how I can pay and confirm my order!";
-    
-    return `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-  };
-
   return (
     <>
       <div className="cart-overlay animate-fade-in" onClick={() => setIsCartOpen(false)} />
@@ -115,11 +96,11 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            <a href={generateWhatsAppLink()} target="_blank" rel="noopener noreferrer" onClick={() => setIsCartOpen(false)} style={{ display: "block", textDecoration: "none" }}>
+            <Link href="/checkout" onClick={() => setIsCartOpen(false)} style={{ display: "block" }}>
               <button className="btn btn-primary checkout-btn" style={{ width: '100%', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                Checkout via WhatsApp
+                Proceed to Checkout
               </button>
-            </a>
+            </Link>
           </div>
         )}
       </div>
