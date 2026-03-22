@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ShoppingCart, Search, Menu } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import "./Navbar.css";
 
 export default function Navbar() {
+  const pathname = usePathname();
   const { itemCount, setIsCartOpen } = useCart();
   const [imgError, setImgError] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -69,19 +71,21 @@ export default function Navbar() {
       </div>
 
       {/* Categories Ribbon (Amazon Style) */}
-      <div className="header-ribbon">
-        <div className="container ribbon-inner">
-          <a href="#" className="ribbon-link ribbon-all">
-            <Menu size={18} /> All
-          </a>
-          <a href="#" className="ribbon-link">Leafy Greens</a>
-          <a href="#" className="ribbon-link">Fresh Fruits</a>
-          <a href="#" className="ribbon-link">Root Veggies</a>
-          <a href="#" className="ribbon-link">Daily Essentials</a>
-          <a href="#" className="ribbon-link">Bestsellers</a>
-          <a href="#" className="ribbon-link">Today's Deals</a>
+      {pathname === '/' && (
+        <div className="header-ribbon">
+          <div className="container ribbon-inner">
+            <a href="#" className="ribbon-link ribbon-all">
+              <Menu size={18} /> All
+            </a>
+            <a href="#" className="ribbon-link">Leafy Greens</a>
+            <a href="#" className="ribbon-link">Fresh Fruits</a>
+            <a href="#" className="ribbon-link">Root Veggies</a>
+            <a href="#" className="ribbon-link">Daily Essentials</a>
+            <a href="#" className="ribbon-link">Bestsellers</a>
+            <a href="#" className="ribbon-link">Today's Deals</a>
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
 }
