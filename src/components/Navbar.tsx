@@ -63,8 +63,7 @@ export default function Navbar() {
           </button>
           
           <div className="auth-buttons">
-            <button className="btn btn-auth btn-login">Login</button>
-            <button className="btn btn-auth btn-register">Register</button>
+            <Link href="/login" className="btn btn-auth btn-login">Sign In</Link>
           </div>
         </div>
       </div>
