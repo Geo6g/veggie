@@ -274,7 +274,7 @@
   }
   
   .header-search.expanded input {
-    width: calc(100vw - 120px) !important;
+    width: 150px !important;
     z-index: 10;
   }
 }
