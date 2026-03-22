@@ -141,13 +141,13 @@
 }
 
 .auth-buttons {
-  display: none;
-  gap: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 @media (min-width: 1024px) {
   .auth-buttons {
-    display: flex;
+    gap: 0.75rem;
   }
 }
 
