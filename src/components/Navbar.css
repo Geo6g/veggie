@@ -249,12 +249,11 @@
 @media (max-width: 768px) {
   .header-main {
     display: grid !important;
-    grid-template-columns: 1fr auto auto;
-    grid-template-areas: 
-      "logo search cart"
-      "auth auth auth";
-    gap: 0.5rem 0.25rem;
+    grid-template-columns: 1fr auto auto auto;
+    grid-template-areas: "logo search cart auth";
+    gap: 0.5rem 0.5rem;
     padding: 0.75rem 1rem 0.5rem 1rem;
+    align-items: center;
   }
   
   .logo { grid-area: logo; }
@@ -264,19 +263,18 @@
   
   .auth-buttons { 
     grid-area: auth; 
-    width: 100%;
-    margin-top: 0.5rem;
-    gap: 0.5rem;
+    width: auto;
+    margin-top: 0;
   }
   
   .btn-auth {
-    flex: 1;
-    padding: 0.6rem;
-    text-align: center;
-    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
   }
   
   .header-search.expanded input {
-    width: calc(100vw - 100px) !important;
+    width: calc(100vw - 120px) !important;
+    z-index: 10;
   }
 }
