@@ -14,7 +14,7 @@ export default function CartDrawer() {
   const deliveryDiff = 300 - cartTotal;
 
   const generateWhatsAppLink = () => {
-    const phoneNumber = "919876543210"; 
+    const phoneNumber = "918078803752"; 
     let message = "Hi FreshVeg! I would like to place an order:\n\n";
     
     items.forEach(item => {

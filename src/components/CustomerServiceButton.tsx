@@ -44,23 +44,23 @@ export default function CustomerServiceButton() {
                   </div>
                 </a>
 
-                <a href="tel:+919876543210" className="contact-card phone-card">
+                <a href="tel:+918078803752" className="contact-card phone-card">
                   <div className="contact-icon">
                     <Phone size={22} />
                   </div>
                   <div className="contact-details">
                     <span className="contact-method">Phone</span>
-                    <span className="contact-value">+91 98765 43210</span>
+                    <span className="contact-value">+91 80788 03752</span>
                   </div>
                 </a>
 
-                <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="contact-card whatsapp-card">
+                <a href="https://wa.me/918078803752" target="_blank" rel="noreferrer" className="contact-card whatsapp-card">
                   <div className="contact-icon">
                     <MessageCircle size={22} />
                   </div>
                   <div className="contact-details">
                     <span className="contact-method">WhatsApp</span>
-                    <span className="contact-value">+91 98765 43210</span>
+                    <span className="contact-value">+91 80788 03752</span>
                   </div>
                 </a>
               </div>
