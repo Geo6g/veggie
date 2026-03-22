@@ -32,7 +32,16 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
           console.error("Error fetching from Supabase, using fallback:", error);
           setProducts(defaultProducts);
         } else if (data && data.length > 0) {
-          setProducts(data as Product[]);
+          const mappedProducts = data.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            packSize: item.packsize || item.packSize,
+            categoryId: item.categoryid || item.categoryId,
+            isAvailable: item.isavailable !== undefined ? item.isavailable : item.isAvailable,
+          }));
+          setProducts(mappedProducts as Product[]);
         } else {
           // If the table exists but is empty
           setProducts(defaultProducts);
