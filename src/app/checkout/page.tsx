@@ -53,7 +53,7 @@ export default function CheckoutPage() {
     message += `Please confirm my order. Thank you!`;
 
     const encodedMessage = encodeURIComponent(message);
-    const whatsappNumber = "919876543210"; 
+    const whatsappNumber = "918078803752"; 
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
     window.open(whatsappUrl, "_blank");
