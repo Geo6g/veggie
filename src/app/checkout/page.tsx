@@ -14,8 +14,8 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const [step, setStep] = useState<"fill_details" | "upi_payment">("fill_details");
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "verifying" | "success" | "failed">("pending");
+  const [step, setStep] = useState<"fill_details" | "payment_processing">("fill_details");
+  const [paymentStatus, setPaymentStatus] = useState<"pending" | "processing" | "success" | "failed">("pending");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -42,17 +42,8 @@ export default function CheckoutPage() {
   const deliveryFee = isFreeDelivery ? 0 : 40;
   const finalTotal = cartTotal + deliveryFee;
 
-  // Direct UPI Deep Link parameters
-  const upiId = "georgygeo2004@oksbi";
   const amount = Math.round(finalTotal);
-  const upiParams = `pa=${upiId}&pn=FreshVeg&cu=INR&am=${amount}`;
-  const anyUpiLink = `upi://pay?${upiParams}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(anyUpiLink)}`;
 
-  // Specific App Links
-  const gpayLink = `gpay://upi/pay?${upiParams}`;
-  const phonepeLink = `phonepe://pay?${upiParams}`;
-  const paytmLink = `paytmmp://pay?${upiParams}`;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -100,16 +91,92 @@ export default function CheckoutPage() {
     router.push("/");
   };
 
-  const handleStartUPI = (e: React.FormEvent) => {
-    e.preventDefault();
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleRazorpayPayment = async () => {
     if (!formData.name || !formData.phone || !formData.address) {
       alert("Please fill all delivery details first.");
       return;
     }
-    if (items.length === 0) return;
-    
-    setStep("upi_payment");
-    setPaymentStatus("pending");
+
+    setStep("payment_processing");
+    setPaymentStatus("processing");
+
+    try {
+      // 1. Load Razorpay Script
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        alert("Failed to load Razorpay. Please check your internet connection.");
+        setStep("fill_details");
+        return;
+      }
+
+      // 2. Create Order on Server
+      const res = await fetch("/api/razorpay/order", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: finalTotal }),
+      });
+
+      const orderData = await res.json();
+      if (orderData.error) throw new Error(orderData.error);
+
+      // 3. Open Razorpay Modal
+      const options = {
+        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_placeholder", // Test key if not set
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "VeggieFresh Shop",
+        description: "Fresh Organic Vegetables",
+        order_id: orderData.id,
+        handler: async function (response: any) {
+          // Payment successful!
+          setPaymentStatus("success");
+          
+          // Save to Database
+          await supabase.from('orders').insert({
+            user_id: user?.id || null,
+            total: Math.round(finalTotal),
+            payment_method: "Razorpay",
+            items: items,
+            delivery_address: formData.address,
+            phone: formData.phone,
+            status: 'pending',
+            razorpay_payment_id: response.razorpay_payment_id
+          });
+
+          clearCart();
+        },
+        prefill: {
+          name: formData.name,
+          contact: formData.phone,
+        },
+        theme: {
+          color: "#16a34a",
+        },
+        modal: {
+          ondismiss: function() {
+            setStep("fill_details");
+            setPaymentStatus("pending");
+          }
+        }
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+
+    } catch (error: any) {
+      console.error("Razorpay Error:", error);
+      setPaymentStatus("failed");
+    }
   };
 
   const handleCOD = (e: React.FormEvent) => {
@@ -119,40 +186,6 @@ export default function CheckoutPage() {
       return;
     }
     handleCheckoutCOD();
-  };
-
-  const openApp = (link: string) => {
-    window.location.href = link;
-    // Set to verifying so when they return to the app, we ask if it succeeded
-    setPaymentStatus("verifying");
-  };
-
-  const confirmSuccess = async () => {
-    setPaymentStatus("success");
-    
-    // Process final fully digital order
-    if (user) {
-      await supabase.from('orders').insert({
-        user_id: user.id,
-        total: amount,
-        payment_method: "UPI",
-        items: items,
-        delivery_address: formData.address,
-        phone: formData.phone,
-        status: 'pending'
-      });
-    } else {
-      await supabase.from('orders').insert({
-        total: amount,
-        payment_method: "UPI",
-        items: items,
-        delivery_address: formData.address,
-        phone: formData.phone,
-        status: 'pending'
-      });
-    }
-
-    clearCart();
   };
 
   if (items.length === 0) {
@@ -196,8 +229,8 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="checkout-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
-                  <button type="button" onClick={handleStartUPI} className="btn btn-primary online-btn" style={{ width: '100%', padding: '1rem' }}>
-                    Pay via UPI (GPay / PhonePe / Paytm)
+                  <button type="button" onClick={handleRazorpayPayment} className="btn btn-primary online-btn" style={{ width: '100%', padding: '1rem' }}>
+                    Pay Online (UPI / Cards / Netbanking)
                   </button>
                   <button type="button" onClick={handleCOD} className="btn btn-outline whatsapp-btn" style={{ width: '100%', padding: '1.1rem' }}>
                     Cash on Delivery (WhatsApp)
@@ -206,61 +239,14 @@ export default function CheckoutPage() {
               </form>
             </>
           ) : (
-            <div className="upi-payment-view animate-fade-in" style={{ textAlign: 'center', padding: '1rem' }}>
-              <h2 className="title" style={{ marginBottom: '1.5rem', color: 'var(--primary-color)' }}>Pay ₹{amount} securely</h2>
-                
-              {paymentStatus === "pending" && (
-                <>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', maxWidth: '300px', margin: '0 auto 2rem' }}>
-                    <button onClick={() => openApp(gpayLink)} className="btn" style={{ background: '#ffffff', color: '#3c4043', border: '1px solid #dadce0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px' }}>
-                      <img src="https://upload.wikimedia.org/wikipedia/commons/f/f2/Google_Pay_Logo.svg" alt="GPay" style={{ height: '20px' }} />
-                      Pay with Google Pay
-                    </button>
-                    <button onClick={() => openApp(phonepeLink)} className="btn" style={{ background: '#5f259f', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px' }}>
-                      <img src="https://download.logo.wine/logo/PhonePe/PhonePe-Logo.wine.png" alt="PhonePe" style={{ height: '24px', filter: 'brightness(0) invert(1)' }} />
-                      Pay with PhonePe
-                    </button>
-                    <button onClick={() => openApp(paytmLink)} className="btn" style={{ background: '#002970', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px' }}>
-                      Pay with Paytm
-                    </button>
-                    <button onClick={() => openApp(anyUpiLink)} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px' }}>
-                      Other UPI Apps
-                    </button>
-                  </div>
-                  
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem', lineHeight: 1.5 }}>
-                    Or scan QR from another device:
-                  </p>
-                  
-                  <div style={{ background: '#fff', padding: '1rem', borderRadius: 'var(--radius-lg)', display: 'inline-block', marginBottom: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-                    <img src={qrUrl} alt="UPI QR Code" style={{ width: '200px', height: '200px' }} />
-                  </div>
-                  
-                  <button onClick={() => setPaymentStatus("verifying")} className="btn btn-primary" style={{ width: '100%', padding: '1.1rem', background: '#10b981', color: 'white', border: 'none' }}>
-                    I have scanned and paid
-                  </button>
-                  <button onClick={() => setStep("fill_details")} className="btn btn-outline" style={{ width: '100%', marginTop: '1rem' }}>
-                    Back to Details
-                  </button>
-                </>
-              )}
-
-              {paymentStatus === "verifying" && (
+            <div className="payment-status-view animate-fade-in" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+              {paymentStatus === "processing" && (
                 <div style={{ padding: '2rem 1rem' }}>
                   <div style={{ width: '60px', height: '60px', border: '4px solid #f3f4f6', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1.5rem' }}></div>
-                  <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Waiting for Payment</h3>
-                  <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
-                    Please complete the payment inside your UPI app. Have you successfully transferred ₹{amount}?
+                  <h3 style={{ fontSize: '1.3rem', marginBottom: '1rem' }}>Initializing Secure Payment...</h3>
+                  <p style={{ color: 'var(--text-muted)' }}>
+                    Please do not refresh or close this window.
                   </p>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <button onClick={confirmSuccess} className="btn btn-primary" style={{ padding: '1.1rem', background: '#10b981', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-                      <CheckCircle size={20} /> Yes, Payment Successful
-                    </button>
-                    <button onClick={() => setPaymentStatus("failed")} className="btn btn-outline" style={{ padding: '1.1rem', color: '#ef4444', borderColor: '#fca5a5', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
-                      <XCircle size={20} /> No, Payment Failed
-                    </button>
-                  </div>
                 </div>
               )}
 
@@ -279,12 +265,12 @@ export default function CheckoutPage() {
               )}
 
               {paymentStatus === "failed" && (
-                <div style={{ padding: '3rem 1rem', animation: 'fade-in 0.5s' }}>
+                <div style={{ animation: 'fade-in 0.5s' }}>
                   <XCircle size={80} color="#ef4444" style={{ margin: '0 auto 1.5rem' }} />
                   <h3 style={{ fontSize: '1.5rem', color: '#ef4444', marginBottom: '1rem' }}>Payment Not Successful</h3>
-                  <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>We could not verify your payment. Please try again.</p>
-                  <button onClick={() => setPaymentStatus("pending")} className="btn btn-primary" style={{ padding: '1.1rem', width: '100%' }}>
-                    Try Payment Again
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>We could not process your payment. Please try again or choose another method.</p>
+                  <button onClick={() => setStep("fill_details")} className="btn btn-primary" style={{ padding: '1.1rem', width: '100%' }}>
+                    Try Again
                   </button>
                 </div>
               )}
