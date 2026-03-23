@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Minus, Check, Leaf, ShieldCheck, Truck } from "lucide-react";
 import { useProducts } from "../../../context/ProductContext";
 import { useCart, CartItem } from "../../../context/CartContext";
+import ReviewSection from "../../../components/ReviewSection";
 
 export default function ProductPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -95,6 +96,9 @@ export default function ProductPage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
         </div>
+
+        {/* Reviews Section */}
+        <ReviewSection productId={product.id} />
       </div>
     </div>
   );
