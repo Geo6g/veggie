@@ -11,8 +11,15 @@ import "./checkout.css";
 
 export default function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const router = useRouter();
+
+  // Guard: Must be logged in to checkout
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login?redirect=/checkout");
+    }
+  }, [user, authLoading, router]);
 
   const [step, setStep] = useState<"fill_details" | "payment_processing">("fill_details");
   const [paymentStatus, setPaymentStatus] = useState<"pending" | "processing" | "success" | "failed">("pending");
@@ -37,6 +44,14 @@ export default function CheckoutPage() {
       });
     }
   }, [user]);
+
+  if (authLoading) {
+    return (
+      <div className="container section pt-header flex-center" style={{ minHeight: '60vh' }}>
+        <div style={{ width: '40px', height: '40px', border: '3px solid #f3f4f6', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      </div>
+    );
+  }
 
   const isFreeDelivery = cartTotal >= 300;
   const deliveryFee = isFreeDelivery ? 0 : 40;

@@ -2,11 +2,13 @@
 
 import { X, Minus, Plus, ShoppingBag, Leaf } from "lucide-react";
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import "./CartDrawer.css";
 import Link from "next/link";
 
 export default function CartDrawer() {
   const { items, isCartOpen, setIsCartOpen, removeFromCart, updateQuantity, cartTotal } = useCart();
+  const { user } = useAuth();
 
   if (!isCartOpen) return null;
 
@@ -96,9 +98,9 @@ export default function CartDrawer() {
               </div>
             </div>
 
-            <Link href="/checkout" onClick={() => setIsCartOpen(false)} style={{ display: "block" }}>
+            <Link href={user ? "/checkout" : "/login?redirect=/checkout"} onClick={() => setIsCartOpen(false)} style={{ display: "block" }}>
               <button className="btn btn-primary checkout-btn" style={{ width: '100%', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                Proceed to Checkout
+                {user ? "Proceed to Checkout" : "Login to Checkout"}
               </button>
             </Link>
           </div>
