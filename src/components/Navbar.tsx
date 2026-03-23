@@ -14,12 +14,15 @@ export default function Navbar() {
   const pathname = usePathname();
   const { itemCount, setIsCartOpen } = useCart();
   const { user, signOut } = useAuth();
-  const { selectedCategory, setSelectedCategory, categories } = useProducts();
+  const { selectedCategory, setSelectedCategory, categories, products, searchQuery, setSearchQuery } = useProducts();
   const [isAdmin, setIsAdmin] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [suggestions, setSuggestions] = useState<typeof products>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -54,6 +57,43 @@ export default function Navbar() {
     }
   };
 
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target as Node) && 
+          searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Update suggestions as user types
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const filtered = products.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      ).slice(0, 5); // Limit to 5 suggestions
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery, products]);
+
+  const handleSuggestionClick = (productName: string) => {
+    setSearchQuery(productName);
+    setShowSuggestions(false);
+    
+    // Scroll to shop section
+    const shopSection = document.getElementById('shop');
+    if (shopSection) {
+      shopSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <header className={`site-header glass-panel ${isScrolled ? 'scrolled' : ''}`}>
       {/* Main Top Bar */}
@@ -83,8 +123,34 @@ export default function Navbar() {
               ref={searchInputRef}
               type="text" 
               placeholder="Search products..." 
-              onBlur={() => setIsSearchExpanded(false)}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => searchQuery && setShowSuggestions(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setShowSuggestions(false);
+                  document.getElementById('shop')?.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
             />
+            {showSuggestions && (
+              <div className="search-suggestions" ref={suggestionsRef}>
+                {suggestions.length > 0 ? (
+                  suggestions.map(p => (
+                    <button 
+                      key={p.id} 
+                      className="suggestion-item"
+                      onClick={() => handleSuggestionClick(p.name)}
+                    >
+                      <Search size={16} className="suggestion-icon" />
+                      <span className="suggestion-name">{p.name}</span>
+                    </button>
+                  ))
+                ) : (
+                  <div className="no-suggestions">No products found</div>
+                )}
+              </div>
+            )}
           </div>
 
           <button className="header-cart-btn" onClick={() => setIsCartOpen(true)}>

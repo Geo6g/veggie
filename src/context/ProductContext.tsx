@@ -13,6 +13,8 @@ interface ProductContextType {
   isLoading: boolean;
   selectedCategory: string;
   setSelectedCategory: (id: string) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ const ProductContext = createContext<ProductContextType | undefined>(undefined);
 export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -90,7 +93,17 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ProductContext.Provider value={{ products, categories, updateProduct, toggleAvailability, isLoading, selectedCategory, setSelectedCategory }}>
+    <ProductContext.Provider value={{ 
+      products, 
+      categories, 
+      updateProduct, 
+      toggleAvailability, 
+      isLoading, 
+      selectedCategory, 
+      setSelectedCategory,
+      searchQuery,
+      setSearchQuery
+    }}>
       {children}
     </ProductContext.Provider>
   );
@@ -107,6 +120,8 @@ export const useProducts = () => {
       isLoading: false,
       selectedCategory: "all",
       setSelectedCategory: () => {},
+      searchQuery: "",
+      setSearchQuery: () => {},
     };
   }
   return context;

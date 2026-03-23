@@ -8,11 +8,13 @@ import { useProducts } from "../context/ProductContext";
 import { ArrowRight, CheckCircle, Truck, ShieldCheck, Star, Clock, MapPin, Leaf } from "lucide-react";
 
 export default function Home() {
-  const { products, categories, selectedCategory, setSelectedCategory } = useProducts();
+  const { products, categories, selectedCategory, setSelectedCategory, searchQuery } = useProducts();
 
-  const filteredProducts = selectedCategory === "all" 
-    ? products 
-    : products.filter(p => p.categoryId === selectedCategory);
+  const filteredProducts = products.filter(p => {
+    const matchesCategory = selectedCategory === "all" || p.categoryId === selectedCategory;
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div className="home-page">
@@ -108,8 +110,12 @@ export default function Home() {
         </div>
         
         {filteredProducts.length === 0 && (
-          <div className="no-products">
-            <p>No products found in this category.</p>
+          <div className="no-products" style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-lg)', marginTop: '2rem' }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+            <h3 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', color: 'var(--foreground)' }}>No products found</h3>
+            <p style={{ color: 'var(--text-muted)' }}>
+              {searchQuery ? `We couldn't find anything matching "${searchQuery}"` : "No products available in this category."}
+            </p>
           </div>
         )}
       </section>
