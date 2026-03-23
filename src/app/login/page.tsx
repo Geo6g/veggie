@@ -16,6 +16,8 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpToken, setOtpToken] = useState("");
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +36,7 @@ export default function LoginPage() {
         router.push("/");
       } else {
         // Handle Sign Up
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -45,11 +47,37 @@ export default function LoginPage() {
         });
         if (error) throw error;
         
-        // Supabase returns success even if email confirmation is required, so redirect and user can check email
-        router.push("/");
+        // If confirmation is required, show OTP input
+        if (data.user && data.session === null) {
+          setShowOtp(true);
+        } else {
+          router.push("/");
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during authentication.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: otpToken,
+        type: 'signup',
+      });
+
+      if (error) throw error;
+      
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message || 'Invalid OTP. Please check your email and try again.');
     } finally {
       setLoading(false);
     }
@@ -75,70 +103,109 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {!isLogin && (
+        {showOtp ? (
+          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+              We've sent a 6-digit verification code to <strong>{email}</strong>. Please enter it below.
+            </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Full Name</label>
+              <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Verification Code</label>
               <input 
                 type="text" 
-                placeholder="John Doe" 
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required={!isLogin}
-                style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }} 
+                placeholder="123456" 
+                value={otpToken}
+                onChange={(e) => setOtpToken(e.target.value)}
+                required
+                style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--primary-color)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1.2rem', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5rem', transition: 'border-color 0.2s' }} 
               />
             </div>
-          )}
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Email Address</label>
-            <input 
-              type="email" 
-              placeholder="you@example.com" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }} 
-            />
-          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Password</label>
-            <input 
-              type="password" 
-              placeholder="••••••••" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }} 
-            />
-          </div>
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="btn btn-primary" 
+              style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', marginTop: '1rem', borderRadius: 'var(--radius-full)', display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center' }}
+            >
+              {loading ? <Loader2 size={20} style={{ animation: 'spin 2s linear infinite' }} /> : null}
+              Verify Account
+            </button>
 
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="btn btn-primary" 
-            style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', marginTop: '1rem', borderRadius: 'var(--radius-full)', display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center' }}
-          >
-            {loading ? <Loader2 size={20} style={{ animation: 'spin 2s linear infinite' }} /> : null}
-            {isLogin ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
+            <button 
+              type="button"
+              onClick={() => setShowOtp(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer', marginTop: '0.5rem' }}
+            >
+              Back to Sign Up
+            </button>
+          </form>
+        ) : (
+          <>
+            <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {!isLogin && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Full Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="John Doe" 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required={!isLogin}
+                    style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }} 
+                  />
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Email Address</label>
+                <input 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }} 
+                />
+              </div>
 
-        <div style={{ marginTop: '2.5rem', textAlign: 'center', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
-          {isLogin ? "Don't have an account? " : "Already have an account? "}
-          <button 
-            type="button"
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError(null);
-            }} 
-            style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 800, cursor: 'pointer', fontSize: '0.95rem', padding: '0' }}
-          >
-            {isLogin ? 'Register now' : 'Sign in'}
-          </button>
-        </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Password</label>
+                <input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--surface-border)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1rem', transition: 'border-color 0.2s' }} 
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="btn btn-primary" 
+                style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', marginTop: '1rem', borderRadius: 'var(--radius-full)', display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center' }}
+              >
+                {loading ? <Loader2 size={20} style={{ animation: 'spin 2s linear infinite' }} /> : null}
+                {isLogin ? 'Sign In' : 'Create Account'}
+              </button>
+            </form>
+
+            <div style={{ marginTop: '2.5rem', textAlign: 'center', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError(null);
+                }} 
+                style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontWeight: 800, cursor: 'pointer', fontSize: '0.95rem', padding: '0' }}
+              >
+                {isLogin ? 'Register now' : 'Sign in'}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
