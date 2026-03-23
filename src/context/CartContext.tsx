@@ -1,6 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from "react";
+import { useAuth } from "./AuthContext";
+import { supabase } from "../lib/supabaseClient";
 
 export interface CartItem {
   id: string;
@@ -31,26 +33,62 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string, id: number } | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { user } = useAuth();
+  
+  // Ref to prevent infinite loops when syncing from DB vs saving to DB
+  const isInitializing = useRef(true);
 
-  // Load from local storage on mount
+  // Load from local or supabase on mount / user change
   useEffect(() => {
     setMounted(true);
-    const savedCart = localStorage.getItem("veg-shop-cart");
-    if (savedCart) {
-      try {
-        setItems(JSON.parse(savedCart));
-      } catch (e) {
-        console.error("Failed to parse cart", e);
+    
+    const loadCart = async () => {
+      isInitializing.current = true;
+      if (user) {
+        const { data, error } = await supabase.from('user_carts').select('items').eq('user_id', user.id).single();
+        if (data && data.items && Array.isArray(data.items) && data.items.length > 0) {
+          setItems(data.items);
+        } else {
+          // Sync local storage to DB if DB is empty
+          const localCart = localStorage.getItem("veg-shop-cart");
+          if (localCart) {
+            try {
+              const parsed = JSON.parse(localCart);
+              if (parsed.length > 0) {
+                setItems(parsed);
+                await supabase.from('user_carts').upsert({ user_id: user.id, items: parsed, updated_at: new Date().toISOString() });
+              }
+            } catch (e) {
+              console.error("Cart parse error", e);
+            }
+          }
+        }
+      } else {
+        const savedCart = localStorage.getItem("veg-shop-cart");
+        if (savedCart) {
+          try { setItems(JSON.parse(savedCart)); } catch (e) {}
+        }
+      }
+      setTimeout(() => isInitializing.current = false, 500); // Allow time for set state to process
+    };
+    
+    loadCart();
+  }, [user]);
+
+  // Save to local & supabase on change
+  useEffect(() => {
+    if (mounted && !isInitializing.current) {
+      localStorage.setItem("veg-shop-cart", JSON.stringify(items));
+      
+      if (user) {
+        supabase.from('user_carts')
+          .upsert({ user_id: user.id, items, updated_at: new Date().toISOString() })
+          .then(({ error }) => {
+            if (error) console.error("Error saving cart to Supabase:", error);
+          });
       }
     }
-  }, []);
-
-  // Save to local storage on change
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem("veg-shop-cart", JSON.stringify(items));
-    }
-  }, [items, mounted]);
+  }, [items, mounted, user]);
 
   const addToCart = (product: CartItem) => {
     setItems((prev) => {
@@ -63,7 +101,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       return [...prev, { ...product, quantity: 1 }];
     });
     
-    // Show toast instead of forcing drawer open
     const id = Date.now();
     setToast({ message: "Item added to cart", id });
     setTimeout(() => {
@@ -120,9 +157,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
 export const useCart = () => {
   const context = useContext(CartContext);
-  // Allow usage without provider temporarily during hydration or if misused, or return default
   if (context === undefined) {
-    // If not mounted yet or outside provider
     return {
       items: [],
       addToCart: () => {},

@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "../context/CartContext";
 import { ProductProvider } from "../context/ProductContext";
+import { AuthProvider } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import CartDrawer from "../components/CartDrawer";
@@ -27,18 +28,20 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body>
-        <ProductProvider>
-          <CartProvider>
-            <Navbar />
-            <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              {children}
-            </main>
-            <Footer />
-            <BottomNav />
-            <CustomerServiceButton />
-            <CartDrawer />
-          </CartProvider>
-        </ProductProvider>
+        <AuthProvider>
+          <ProductProvider>
+            <CartProvider>
+              <Navbar />
+              <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                {children}
+              </main>
+              <Footer />
+              <BottomNav />
+              <CustomerServiceButton />
+              <CartDrawer />
+            </CartProvider>
+          </ProductProvider>
+        </AuthProvider>
       </body>
     </html>
   );

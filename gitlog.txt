@@ -1,0 +1,59 @@
+commit c797ce26abd644f279d1fba49c917480a3c01f3b
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 22:33:20 2026 +0530
+
+    Fix: map Postgres lowercase columns to camelCase Product interface
+
+commit 3ac172262ba34d4bdca3604fa8e0997c50ddb45c
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 22:25:35 2026 +0530
+
+    Feat: transition site to pull real-time database from Supabase
+
+commit 8526b2fe6cc152e39656ba140ca6e7ba7fca2d6d
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 22:13:28 2026 +0530
+
+    Feat: prepare supabase SDK and migration script
+
+commit e5fcdd7c6024b9dea08e68ffa6c4de614f1dd901
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 22:02:40 2026 +0530
+
+    Fix: route cart checkout strictly to the new UPI checkout page
+
+commit af458c2cd4b4c67e84ac448f592676b610092d1c
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 21:57:47 2026 +0530
+
+    Feat: implement direct zero-setup UPI checkout flow
+
+commit 171be00e1fe5d8ffbf708f0c173697c17fac2bcc
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 21:48:54 2026 +0530
+
+    Fix: update phone number on checkout page too
+
+commit 3962dca94f716ac897db176095f22f18d3d8a059
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 21:48:04 2026 +0530
+
+    Fix: globally update active WhatsApp and Customer Service contact number
+
+commit 7ae1ea58da5a5fb964cd68517793173f1e145aba
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 21:46:32 2026 +0530
+
+    Feat: implement WhatsApp checkout link
+
+commit d71cea104dfd4f448b93c215ebe7916f019a2602
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 18:02:36 2026 +0530
+
+    Fix: reduce expanded search bar width on mobile
+
+commit 6d37155100bbe1fe111f2e7cc4266107467a0a58
+Author: georgy <georgygeo2004@gmail.com>
+Date:   Sun Mar 22 17:56:41 2026 +0530
+
+    Fix: mobile layout for Sign In button single row
