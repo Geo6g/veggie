@@ -8,8 +8,7 @@ import { useProducts } from "../context/ProductContext";
 import { ArrowRight, CheckCircle, Truck, ShieldCheck, Star, Clock, MapPin, Leaf } from "lucide-react";
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const { products, categories } = useProducts();
+  const { products, categories, selectedCategory, setSelectedCategory } = useProducts();
 
   const filteredProducts = selectedCategory === "all" 
     ? products 

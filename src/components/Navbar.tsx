@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { ShoppingCart, Search, Menu, User, Shield } from "lucide-react";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
+import { useProducts } from "../context/ProductContext";
 import { supabase } from "../lib/supabaseClient";
 import "./Navbar.css";
 
@@ -13,6 +14,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { itemCount, setIsCartOpen } = useCart();
   const { user, signOut } = useAuth();
+  const { selectedCategory, setSelectedCategory, categories } = useProducts();
   const [isAdmin, setIsAdmin] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -39,6 +41,17 @@ export default function Navbar() {
   const handleSearchClick = () => {
     setIsSearchExpanded(true);
     setTimeout(() => searchInputRef.current?.focus(), 100);
+  };
+
+  const handleCategoryClick = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    // Smooth scroll only if on home page
+    if (pathname === '/') {
+      const shopSection = document.getElementById('shop');
+      if (shopSection) {
+        shopSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
   };
 
   return (
@@ -108,15 +121,25 @@ export default function Navbar() {
       {pathname === '/' && (
         <div className="header-ribbon">
           <div className="container ribbon-inner">
-            <a href="#" className="ribbon-link ribbon-all">
+            <a 
+              href="#shop"
+              onClick={() => setSelectedCategory('all')} 
+              className="ribbon-link ribbon-all"
+            >
               <Menu size={18} /> All
             </a>
-            <a href="#" className="ribbon-link">Leafy Greens</a>
-            <a href="#" className="ribbon-link">Fresh Fruits</a>
-            <a href="#" className="ribbon-link">Root Veggies</a>
-            <a href="#" className="ribbon-link">Daily Essentials</a>
-            <a href="#" className="ribbon-link">Bestsellers</a>
-            <a href="#" className="ribbon-link">Today's Deals</a>
+            {categories.map(cat => (
+              <a 
+                key={cat.id} 
+                href="#shop"
+                onClick={() => setSelectedCategory(cat.id)}
+                className="ribbon-link"
+              >
+                {cat.name}
+              </a>
+            ))}
+            <a href="#bestsellers" className="ribbon-link">Bestsellers</a>
+            <a href="#shop" className="ribbon-link">Today's Deals</a>
           </div>
         </div>
       )}

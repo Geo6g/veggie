@@ -58,13 +58,13 @@ export default function CheckoutPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const buildAndSendWhatsAppOrder = (paymentMethod: "COD" | "UPI") => {
+  const handleCheckoutCOD = () => {
     // 1. Save to Database for order history async
     if (user) {
       supabase.from('orders').insert({
         user_id: user.id,
         total: amount,
-        payment_method: paymentMethod,
+        payment_method: "COD",
         items: items,
         delivery_address: formData.address,
         phone: formData.phone,
@@ -74,7 +74,7 @@ export default function CheckoutPage() {
       });
     }
 
-    // 2. Build WhatsApp String
+    // 2. Build WhatsApp String for COD
     let message = `*New Order from ${formData.name}*\n`;
     message += `Phone: ${formData.phone}\n`;
     message += `Address: ${formData.address}\n\n`;
@@ -87,16 +87,7 @@ export default function CheckoutPage() {
     message += `\n*Subtotal:* ₹${Math.round(cartTotal)}`;
     message += `\n*Delivery:* ${isFreeDelivery ? "Free" : `₹${deliveryFee}`}`;
     message += `\n*Total Amount:* ₹${amount}\n`;
-    
-    // Append Payment Status
-    message += `\n*Payment Method:* ${paymentMethod === "UPI" ? "Online (Paid via UPI)" : "Cash on Delivery"}\n`;
-    
-    if (paymentMethod === "UPI") {
-       message += `_(Note: Checkout system marked payment of ₹${amount} as successful to ${upiId}. Please verify on your bank.)_\n\n`;
-    } else {
-       message += `\n`;
-    }
-    
+    message += `\n*Payment Method:* Cash on Delivery\n\n`;
     message += `Please confirm my order. Thank you!`;
 
     const encodedMessage = encodeURIComponent(message);
@@ -127,7 +118,7 @@ export default function CheckoutPage() {
       alert("Please fill all details");
       return;
     }
-    buildAndSendWhatsAppOrder("COD");
+    handleCheckoutCOD();
   };
 
   const openApp = (link: string) => {
@@ -136,11 +127,32 @@ export default function CheckoutPage() {
     setPaymentStatus("verifying");
   };
 
-  const confirmSuccess = () => {
+  const confirmSuccess = async () => {
     setPaymentStatus("success");
-    setTimeout(() => {
-      buildAndSendWhatsAppOrder("UPI");
-    }, 1500);
+    
+    // Process final fully digital order
+    if (user) {
+      await supabase.from('orders').insert({
+        user_id: user.id,
+        total: amount,
+        payment_method: "UPI",
+        items: items,
+        delivery_address: formData.address,
+        phone: formData.phone,
+        status: 'pending'
+      });
+    } else {
+      await supabase.from('orders').insert({
+        total: amount,
+        payment_method: "UPI",
+        items: items,
+        delivery_address: formData.address,
+        phone: formData.phone,
+        status: 'pending'
+      });
+    }
+
+    clearCart();
   };
 
   if (items.length === 0) {
@@ -256,7 +268,13 @@ export default function CheckoutPage() {
                 <div style={{ padding: '3rem 1rem', animation: 'fade-in 0.5s' }}>
                   <CheckCircle size={80} color="#10b981" style={{ margin: '0 auto 1.5rem' }} />
                   <h3 style={{ fontSize: '1.5rem', color: '#10b981', marginBottom: '1rem' }}>Payment Successful!</h3>
-                  <p style={{ color: 'var(--text-muted)' }}>Redirecting securely to WhatsApp to send your order...</p>
+                  <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Your order has been officially placed! You don't need to send a WhatsApp message, our store owner has directly received your order.</p>
+
+                  <Link href="/">
+                    <button className="btn btn-primary" style={{ padding: '1.1rem', width: '100%' }}>
+                      Continue Shopping
+                    </button>
+                  </Link>
                 </div>
               )}
 

@@ -11,12 +11,15 @@ interface ProductContextType {
   updateProduct: (product: Product) => void;
   toggleAvailability: (id: string) => void;
   isLoading: boolean;
+  selectedCategory: string;
+  setSelectedCategory: (id: string) => void;
 }
 
 const ProductContext = createContext<ProductContextType | undefined>(undefined);
 
 export const ProductProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -87,7 +90,7 @@ export const ProductProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <ProductContext.Provider value={{ products, categories, updateProduct, toggleAvailability, isLoading }}>
+    <ProductContext.Provider value={{ products, categories, updateProduct, toggleAvailability, isLoading, selectedCategory, setSelectedCategory }}>
       {children}
     </ProductContext.Provider>
   );
@@ -102,6 +105,8 @@ export const useProducts = () => {
       updateProduct: () => {},
       toggleAvailability: () => {},
       isLoading: false,
+      selectedCategory: "all",
+      setSelectedCategory: () => {},
     };
   }
   return context;
