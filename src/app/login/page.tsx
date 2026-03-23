@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -63,9 +63,11 @@ export default function LoginPage() {
 
   // Auto-redirect when user confirms email
   const { user } = useAuth();
-  if (user && isWaitingForEmail) {
-    router.push("/");
-  }
+  useEffect(() => {
+    if (user && isWaitingForEmail) {
+      router.push("/");
+    }
+  }, [user, isWaitingForEmail, router]);
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1.5rem', background: 'var(--background)' }}>
