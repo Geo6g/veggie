@@ -95,20 +95,20 @@ export default function Navbar() {
           <div className="auth-buttons">
             {user ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Link href="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
+                    {user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || <User size={16} />}
+                  </div>
+                  {isAdmin && (
+                    <span className="hidden-mobile" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--foreground)', maxWidth: '80px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
+                    </span>
+                  )}
+                </Link>
                 {isAdmin && (
-                  <>
-                    <Link href="/profile" style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                        {user.user_metadata?.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || <User size={16} />}
-                      </div>
-                      <span className="hidden-mobile" style={{ maxWidth: '80px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {user.user_metadata?.full_name?.split(' ')[0] || 'User'}
-                      </span>
-                    </Link>
-                    <Link href="/admin" className="btn btn-auth hidden-mobile" style={{ background: '#f59e0b', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                      <Shield size={16} /> Admin
-                    </Link>
-                  </>
+                  <Link href="/admin" className="btn btn-auth hidden-mobile" style={{ background: '#f59e0b', color: 'white', border: 'none', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Shield size={16} /> Admin
+                  </Link>
                 )}
                 <button onClick={signOut} className="btn btn-auth" style={{ background: 'transparent', border: '1px solid var(--surface-border)', color: 'var(--text-muted)' }}>Logout</button>
               </div>
