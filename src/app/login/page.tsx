@@ -106,6 +106,10 @@ export default function LoginPage() {
                 50% { opacity: 1; }
                 100% { opacity: 0.6; }
               }
+              @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+              }
             `}</style>
             <button 
               type="button"
