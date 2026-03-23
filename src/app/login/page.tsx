@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,8 +17,7 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpToken, setOtpToken] = useState("");
+  const [isWaitingForEmail, setIsWaitingForEmail] = useState(false);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,9 +47,9 @@ export default function LoginPage() {
         });
         if (error) throw error;
         
-        // If confirmation is required, show OTP input
+        // If confirmation is required, show waiting screen
         if (data.user && data.session === null) {
-          setShowOtp(true);
+          setIsWaitingForEmail(true);
         } else {
           router.push("/");
         }
@@ -61,27 +61,11 @@ export default function LoginPage() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    try {
-      const { error } = await supabase.auth.verifyOtp({
-        email,
-        token: otpToken,
-        type: 'signup',
-      });
-
-      if (error) throw error;
-      
-      router.push("/");
-    } catch (err: any) {
-      setError(err.message || 'Invalid OTP. Please check your email and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Auto-redirect when user confirms email
+  const { user } = useAuth();
+  if (user && isWaitingForEmail) {
+    router.push("/");
+  }
 
   return (
     <div style={{ minHeight: 'calc(100vh - 80px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem 1.5rem', background: 'var(--background)' }}>
@@ -103,41 +87,32 @@ export default function LoginPage() {
           </div>
         )}
 
-        {showOtp ? (
-          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-              We've sent a 6-digit verification code to <strong>{email}</strong>. Please enter it below.
+        {isWaitingForEmail ? (
+          <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+            <div style={{ width: '64px', height: '64px', border: '4px solid #f3f4f6', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 2rem' }}></div>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--foreground)' }}>Confirm your Email</h2>
+            <p style={{ color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: '2rem' }}>
+              We've sent a magic link to <strong>{email}</strong>.<br/>
+              Please click the link in your email to verify your account.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Verification Code</label>
-              <input 
-                type="text" 
-                placeholder="123456" 
-                value={otpToken}
-                onChange={(e) => setOtpToken(e.target.value)}
-                required
-                style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '2px solid var(--primary-color)', outline: 'none', background: '#f8fafc', width: '100%', fontSize: '1.2rem', fontWeight: 700, textAlign: 'center', letterSpacing: '0.5rem', transition: 'border-color 0.2s' }} 
-              />
-            </div>
-
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="btn btn-primary" 
-              style={{ width: '100%', padding: '1.1rem', fontSize: '1.05rem', marginTop: '1rem', borderRadius: 'var(--radius-full)', display: 'flex', justifyContent: 'center', gap: '0.5rem', alignItems: 'center' }}
-            >
-              {loading ? <Loader2 size={20} style={{ animation: 'spin 2s linear infinite' }} /> : null}
-              Verify Account
-            </button>
-
+            <p style={{ fontSize: '0.9rem', color: 'var(--primary-color)', fontWeight: 600, animation: 'pulse 2s infinite' }}>
+              Waiting for confirmation...
+            </p>
+            <style jsx>{`
+              @keyframes pulse {
+                0% { opacity: 0.6; }
+                50% { opacity: 1; }
+                100% { opacity: 0.6; }
+              }
+            `}</style>
             <button 
               type="button"
-              onClick={() => setShowOtp(false)}
-              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer', marginTop: '0.5rem' }}
+              onClick={() => setIsWaitingForEmail(false)}
+              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '0.9rem', cursor: 'pointer', marginTop: '2.5rem', textDecoration: 'underline' }}
             >
               Back to Sign Up
             </button>
-          </form>
+          </div>
         ) : (
           <>
             <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
