@@ -46,7 +46,7 @@ export default function CheckoutPage() {
     }
   }, [user]);
 
-  if (authLoading) {
+  if (authLoading || !user) {
     return (
       <div className="container section pt-header flex-center" style={{ minHeight: '60vh' }}>
         <div style={{ width: '40px', height: '40px', border: '3px solid #f3f4f6', borderTopColor: 'var(--primary-color)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
@@ -118,6 +118,12 @@ export default function CheckoutPage() {
   };
 
   const handleRazorpayPayment = async () => {
+    if (!user) {
+      alert("Please login to place an order.");
+      router.push("/login?redirect=/checkout");
+      return;
+    }
+    
     if (!formData.name || !formData.phone || !formData.address) {
       alert("Please fill all delivery details first.");
       return;
