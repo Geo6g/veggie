@@ -1,11 +1,11 @@
 "use client";
 // Force rebuild: 2026-03-23 19:13
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import { ArrowLeft, ShoppingBag, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CheckCircle, XCircle, MapPin, Navigation, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import "./checkout.css";
@@ -30,6 +30,13 @@ export default function CheckoutPage() {
     phone: "",
     address: "",
   });
+
+  // Location state
+  const [locationState, setLocationState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationError, setLocationError] = useState("");
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [detectedAddress, setDetectedAddress] = useState("");
 
   // Pre-fill user data if they are logged in
   useEffect(() => {
@@ -60,6 +67,54 @@ export default function CheckoutPage() {
 
   const amount = Math.round(finalTotal);
 
+  // --- Location Handling ---
+  const handleDetectLocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      setLocationState("error");
+      return;
+    }
+    setLocationState("loading");
+    setLocationError("");
+    setShowLocationModal(true);
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocationCoords({ lat: latitude, lng: longitude });
+        try {
+          // Reverse geocode using OpenStreetMap Nominatim (free, no API key)
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await res.json();
+          const addr = data.display_name || `${latitude}, ${longitude}`;
+          setDetectedAddress(addr);
+          setLocationState("success");
+        } catch {
+          setDetectedAddress(`${latitude.toFixed(5)}, ${longitude.toFixed(5)}`);
+          setLocationState("success");
+        }
+      },
+      (err) => {
+        let msg = "Could not get your location.";
+        if (err.code === 1) msg = "Location permission denied. Please allow access in your browser settings.";
+        else if (err.code === 2) msg = "Location unavailable. Please enter your address manually.";
+        else if (err.code === 3) msg = "Location request timed out. Please try again.";
+        setLocationError(msg);
+        setLocationState("error");
+      },
+      { timeout: 15000, enableHighAccuracy: true }
+    );
+  }, []);
+
+  const handleConfirmLocation = () => {
+    if (detectedAddress) {
+      setFormData((prev) => ({ ...prev, address: detectedAddress }));
+    }
+    setShowLocationModal(false);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -84,8 +139,11 @@ export default function CheckoutPage() {
     // 2. Build WhatsApp String for COD
     let message = `*New Order from ${formData.name}*\n`;
     message += `Phone: ${formData.phone}\n`;
-    message += `Address: ${formData.address}\n\n`;
-    message += `*Order Details:*\n`;
+    message += `Address: ${formData.address}\n`;
+    if (locationCoords) {
+      message += `📍 Live Location: https://maps.google.com/?q=${locationCoords.lat},${locationCoords.lng}\n`;
+    }
+    message += `\n*Order Details:*\n`;
 
     items.forEach((item, index) => {
       message += `${index + 1}. ${item.name} (${item.packSize}) x ${item.quantity} = ₹${Math.round(item.price * item.quantity)}\n`;
@@ -247,7 +305,37 @@ export default function CheckoutPage() {
                 
                 <div className="form-group">
                   <label htmlFor="address">Delivery Address</label>
-                  <textarea id="address" name="address" value={formData.address} onChange={handleInputChange} required placeholder="House No, Street, Landmark" rows={4} />
+                  <button
+                    type="button"
+                    className="location-detect-btn"
+                    onClick={handleDetectLocation}
+                    disabled={locationState === "loading"}
+                  >
+                    {locationState === "loading" ? (
+                      <><Loader2 size={16} className="spin-icon" /> Detecting Location...</>
+                    ) : (
+                      <><Navigation size={16} /> Use My Current Location</>
+                    )}
+                  </button>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="House No, Street, Landmark — or use button above"
+                    rows={4}
+                  />
+                  {locationCoords && (
+                    <a
+                      href={`https://maps.google.com/?q=${locationCoords.lat},${locationCoords.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="location-map-link"
+                    >
+                      <MapPin size={13} /> View on Google Maps
+                    </a>
+                  )}
                 </div>
 
                 <div className="checkout-actions" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
@@ -259,6 +347,66 @@ export default function CheckoutPage() {
                   </button>
                 </div>
               </form>
+
+              {/* Location Modal */}
+              {showLocationModal && (
+                <div className="location-modal-overlay" onClick={() => setShowLocationModal(false)}>
+                  <div className="location-modal" onClick={(e) => e.stopPropagation()}>
+                    <div className="location-modal-header">
+                      <MapPin size={24} color="var(--primary-color)" />
+                      <h3>Detect Your Location</h3>
+                    </div>
+
+                    {locationState === "loading" && (
+                      <div className="location-modal-body loading">
+                        <div className="location-pulse-ring" />
+                        <Loader2 size={36} className="spin-icon" color="var(--primary-color)" />
+                        <p>Detecting your location...</p>
+                        <span>Please allow location access if prompted</span>
+                      </div>
+                    )}
+
+                    {locationState === "success" && (
+                      <div className="location-modal-body success">
+                        <div className="location-detected-info">
+                          <CheckCircle size={28} color="#10b981" />
+                          <div>
+                            <p className="location-detected-label">Location Detected!</p>
+                            <p className="location-detected-address">{detectedAddress}</p>
+                          </div>
+                        </div>
+                        {locationCoords && (
+                          <div className="location-map-preview">
+                            <img
+                              src={`https://staticmap.openstreetmap.de/staticmap.php?center=${locationCoords.lat},${locationCoords.lng}&zoom=16&size=600x200&markers=${locationCoords.lat},${locationCoords.lng},red`}
+                              alt="Map preview"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
+                          </div>
+                        )}
+                        <div className="location-modal-actions">
+                          <button className="btn btn-primary" onClick={handleConfirmLocation}>
+                            ✓ Use This Address
+                          </button>
+                          <button className="btn btn-outline" onClick={() => setShowLocationModal(false)}>
+                            Enter Manually
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {locationState === "error" && (
+                      <div className="location-modal-body error">
+                        <XCircle size={36} color="#ef4444" />
+                        <p>{locationError}</p>
+                        <button className="btn btn-outline" onClick={() => setShowLocationModal(false)}>
+                          Close
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div className="payment-status-view animate-fade-in" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
