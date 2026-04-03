@@ -5,10 +5,14 @@ import { useState, useEffect, useCallback } from "react";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
-import { ArrowLeft, ShoppingBag, CheckCircle, XCircle, MapPin, Navigation, Loader2 } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CheckCircle, XCircle, MapPin, Navigation, Loader2, Map } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import "./checkout.css";
+
+// Dynamically import map modal (Leaflet needs browser env)
+const LocationMapModal = dynamic(() => import("../../components/LocationMapModal"), { ssr: false });
 
 export default function CheckoutPage() {
   const { items, cartTotal, clearCart } = useCart();
@@ -37,6 +41,7 @@ export default function CheckoutPage() {
   const [locationError, setLocationError] = useState("");
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [detectedAddress, setDetectedAddress] = useState("");
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Pre-fill user data if they are logged in
   useEffect(() => {
@@ -114,6 +119,14 @@ export default function CheckoutPage() {
       setFormData((prev) => ({ ...prev, address: detectedAddress }));
     }
     setShowLocationModal(false);
+  };
+
+  // Called when user confirms location from the interactive map picker
+  const handleMapConfirm = (address: string, lat: number, lng: number) => {
+    setFormData((prev) => ({ ...prev, address }));
+    setLocationCoords({ lat, lng });
+    setLocationState("success");
+    setShowMapPicker(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -305,18 +318,27 @@ export default function CheckoutPage() {
                 
                 <div className="form-group">
                   <label htmlFor="address">Delivery Address</label>
-                  <button
-                    type="button"
-                    className="location-detect-btn"
-                    onClick={handleDetectLocation}
-                    disabled={locationState === "loading"}
-                  >
-                    {locationState === "loading" ? (
-                      <><Loader2 size={16} className="spin-icon" /> Detecting Location...</>
-                    ) : (
-                      <><Navigation size={16} /> Use My Current Location</>
-                    )}
-                  </button>
+                  <div className="location-btn-row">
+                    <button
+                      type="button"
+                      className="location-detect-btn"
+                      onClick={handleDetectLocation}
+                      disabled={locationState === "loading"}
+                    >
+                      {locationState === "loading" ? (
+                        <><Loader2 size={16} className="spin-icon" /> Detecting…</>
+                      ) : (
+                        <><Navigation size={16} /> Auto-Detect GPS</>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      className="location-detect-btn location-map-btn"
+                      onClick={() => setShowMapPicker(true)}
+                    >
+                      <Map size={16} /> Select on Map
+                    </button>
+                  </div>
                   <textarea
                     id="address"
                     name="address"
@@ -348,7 +370,17 @@ export default function CheckoutPage() {
                 </div>
               </form>
 
-              {/* Location Modal */}
+              {/* Interactive Map Picker */}
+              {showMapPicker && (
+                <LocationMapModal
+                  initialLat={locationCoords?.lat}
+                  initialLng={locationCoords?.lng}
+                  onConfirm={handleMapConfirm}
+                  onClose={() => setShowMapPicker(false)}
+                />
+              )}
+
+              {/* GPS Auto-detect Modal */}
               {showLocationModal && (
                 <div className="location-modal-overlay" onClick={() => setShowLocationModal(false)}>
                   <div className="location-modal" onClick={(e) => e.stopPropagation()}>

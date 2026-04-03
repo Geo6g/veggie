@@ -147,22 +147,41 @@
 /* Location Feature      */
 /* ===================== */
 
+.location-btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
 .location-detect-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.65rem 1rem;
+  padding: 0.65rem 0.75rem;
   border: 2px dashed var(--primary-color);
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--primary-color);
   font-weight: 600;
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: var(--transition);
   width: 100%;
   justify-content: center;
-  margin-bottom: 0.6rem;
+}
+
+/* "Select on Map" button — blue accent */
+.location-map-btn {
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.location-map-btn:hover {
+  background: rgba(59, 130, 246, 0.08);
+  border-style: solid;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
 }
 
 .location-detect-btn:hover:not(:disabled) {

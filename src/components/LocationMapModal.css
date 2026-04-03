@@ -1,0 +1,222 @@
+/* ─── Full-screen overlay ─── */
+.lmm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+}
+
+.lmm-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Header ─── */
+.lmm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.25rem;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface);
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.lmm-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.lmm-close {
+  background: var(--background);
+  border: 1px solid var(--surface-border);
+  color: var(--foreground);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lmm-close:hover {
+  background: var(--surface-border);
+}
+
+/* ─── Map wrapper ─── */
+.lmm-map-wrapper {
+  flex: 1;
+  position: relative;
+  min-height: 0;  /* Required for flex child scrolling */
+}
+
+.lmm-map-div {
+  width: 100%;
+  height: 100%;
+}
+
+.lmm-map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: var(--surface);
+  z-index: 5;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* ─── Fixed centre pin ─── */
+.lmm-centre-pin {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lmm-pin-shadow {
+  width: 14px;
+  height: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  margin-top: -2px;
+  filter: blur(2px);
+}
+
+/* ─── Geocoding pill ─── */
+.lmm-geocoding-pill {
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 2rem;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+}
+
+/* ─── GPS button ─── */
+.lmm-gps-btn {
+  position: absolute;
+  bottom: 5.5rem;
+  right: 1rem;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  color: var(--primary-color);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.lmm-gps-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+}
+
+/* ─── Bottom sheet ─── */
+.lmm-bottom {
+  padding: 1.25rem 1.5rem 1.5rem;
+  background: var(--surface);
+  border-top: 1px solid var(--surface-border);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.lmm-bottom-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 0.5rem 0;
+}
+
+.lmm-address-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  min-height: 2.5rem;
+}
+
+.lmm-address-text {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--foreground);
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Shimmer text while geocoding */
+.lmm-shimmer {
+  display: inline-block;
+  background: linear-gradient(90deg, var(--surface-border) 25%, var(--background) 50%, var(--surface-border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 4px;
+  color: transparent;
+  user-select: none;
+  min-width: 200px;
+}
+
+.lmm-confirm-btn {
+  width: 100%;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.lmm-confirm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Spin ─── */
+.lmm-spin {
+  animation: lmm-spin 0.9s linear infinite;
+}
+
+@keyframes lmm-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
